@@ -16,21 +16,22 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class NbpApiClientTest {
+    private ObjectMapper objectMapper = mock(ObjectMapper.class);
 
-    @Mock
-    private ObjectMapper objectMapper;
-
-    @InjectMocks
-    private NbpApiClientImpl nbpApiClient;
+    private NbpApiClientImpl nbpApiClient = new NbpApiClientImpl("http://api.nbp.pl/api",
+            "/exchangerates/rates/A/", "?format=json", objectMapper);
 
     @Test
     void getCurrencyRateTest_validDataGiven_ShouldReturnCurrencyRateFromApi() throws IOException {
         ArrayList<Rate> rates = new ArrayList<>();
-        rates.add(new Rate(LocalDate.of(2022, 8, 14), BigDecimal.valueOf(4.58)));
-        when(objectMapper.readValue(any(URL.class), CurrencyRatesResponse.class))
+        LocalDate date = LocalDate.of(2022, 8, 14);
+        rates.add(new Rate(date, BigDecimal.valueOf(4.58)));
+        when(objectMapper.readValue(any(URL.class), eq(CurrencyRatesResponse.class)))
                 .thenReturn(new CurrencyRatesResponse("EUR", rates));
 
         CurrencyRate response = nbpApiClient
@@ -38,6 +39,6 @@ public class NbpApiClientTest {
 
         Assertions.assertEquals("EUR", response.getCode());
         Assertions.assertEquals(BigDecimal.valueOf(4.58), response.getRateMid());
-        Assertions.assertEquals(LocalDate.of(2022, 8, 16), response.getRate().getEffectiveDate());
+        Assertions.assertEquals(date, response.getRate().getEffectiveDate());
     }
 }
